@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DC Water Leak Monitoring Dashboard</title>
+  <script>
+    (function () {
+      var t = localStorage.getItem("dcwater-theme");
+      document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+    })();
+  </script>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">💧</span>
+        <div>
+          <h1>DC Water Leak Monitoring</h1>
+          <p>Learn leak monitoring with synthetic SCADA, ML detection, and operator workflow</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-theme" class="btn btn-ghost btn-theme guide-allowed" type="button" aria-label="Toggle color theme">Light mode</button>
+        <button id="btn-help" class="btn btn-ghost guide-allowed" type="button">How it works</button>
+        <button id="btn-reset" class="btn btn-ghost" type="button">Reset demo</button>
+        <button id="btn-guided" class="btn btn-ghost" type="button">Quick tour</button>
+        <button id="btn-generate" class="btn btn-secondary" type="button">1. Generate Data</button>
+        <button id="btn-train" class="btn btn-secondary" type="button" disabled>2. Train Model</button>
+        <button id="btn-simulate" class="btn btn-primary" type="button" disabled>3. Live Simulation</button>
+      </div>
+    </header>
+
+    <div class="disclaimer">
+      <strong>Metrics are separate:</strong>
+      <strong>Zones at Risk</strong> = colored map markers from latest readings.
+      <strong>Pending Review</strong> = open operator incidents (may differ if readings cleared but case not closed).
+    </div>
+
+    <section class="metrics-row">
+      <article class="metric-card">
+        <span class="metric-label">Zones at Risk (map)</span>
+        <strong id="metric-at-risk" class="metric-value alert">0</strong>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Pending Review</span>
+        <strong id="metric-pending" class="metric-value">0</strong>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Awaiting Close-out</span>
+        <strong id="metric-closeout" class="metric-value">0</strong>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Work Orders</span>
+        <strong id="metric-tickets" class="metric-value">0</strong>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Model Accuracy</span>
+        <strong id="metric-accuracy" class="metric-value">—</strong>
+      </article>
+      <article class="metric-card metric-card-muted">
+        <span class="metric-label">Monitored Zones</span>
+        <strong id="metric-zones" class="metric-value">8</strong>
+      </article>
+    </section>
+
+    <section class="toolbar-row">
+      <label class="toolbar-label">
+        Detection
+        <select id="detection-mode">
+          <option value="ml">ML model (after train)</option>
+          <option value="rules">Rules only</option>
+        </select>
+      </label>
+      <label class="toolbar-label">
+        Simulation speed
+        <select id="sim-speed">
+          <option value="slow">Slow</option>
+          <option value="normal" selected>Normal</option>
+          <option value="fast">Fast</option>
+        </select>
+      </label>
+      <div class="scenario-buttons">
+        <span class="toolbar-label">Try scenarios:</span>
+        <button type="button" class="btn btn-ghost btn-sm" data-scenario="leak">Inject leak</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-scenario="hydrant_test">Hydrant test</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-scenario="valve_work">Valve work</button>
+      </div>
+    </section>
+
+    <main class="dashboard-grid">
+      <section class="panel user-guide-panel" id="user-guide-panel">
+        <div class="user-guide-header">
+          <h2>Interactive User Guide</h2>
+          <div class="user-guide-meta">
+            <span id="guide-progress" class="user-guide-progress">Not started</span>
+            <button id="btn-guide-start" class="btn btn-primary guide-allowed" type="button">Start guide</button>
+            <button id="btn-guide-stop" class="btn btn-ghost guide-allowed hidden" type="button">Exit guide</button>
+          </div>
+        </div>
+        <div id="guide-idle" class="user-guide-idle-msg">
+          New here? Follow 10 short steps to learn how data, detection, alerts, and operator workflow fit together. While the guide is active, use <strong>Do this step</strong> below — top toolbar buttons are paused until you exit.
+        </div>
+        <div id="guide-body" class="user-guide-body hidden">
+          <ol id="guide-steps" class="user-guide-steps"></ol>
+          <div class="user-guide-detail">
+            <h3 id="guide-step-title">Step title</h3>
+            <span id="guide-step-duration" class="user-guide-duration"></span>
+            <p id="guide-learn" class="user-guide-learn"></p>
+            <p id="guide-you-will-see" class="user-guide-see"></p>
+            <div class="user-guide-actions">
+              <button id="btn-guide-run" class="btn btn-primary guide-allowed" type="button">Do this step</button>
+              <button id="btn-guide-skip" class="btn btn-ghost guide-allowed" type="button">Skip</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel map-panel">
+        <div class="panel-header">
+          <h2>Distribution Network Map</h2>
+          <span id="map-status" class="badge badge-neutral">Ready</span>
+        </div>
+        <p id="map-summary" class="panel-hint">Click <strong>Generate Data</strong> to load 14 days of synthetic SCADA for 8 DC zones.</p>
+        <div id="map" class="map-container" aria-label="DC water zone map"></div>
+        <div class="map-legend">
+          <span><i class="dot dot-normal"></i> Normal</span>
+          <span><i class="dot dot-warning"></i> Warning</span>
+          <span><i class="dot dot-critical"></i> Likely leak</span>
+          <span><i class="dot dot-priority"></i> High-priority zone</span>
+          <span>🔧 Scheduled maintenance</span>
+        </div>
+      </section>
+
+      <aside class="panel side-panel">
+        <div class="side-tabs" role="tablist">
+          <button type="button" class="side-tab active" data-tab="zone">Zone</button>
+          <button type="button" class="side-tab" data-tab="context">Context</button>
+          <button type="button" class="side-tab" data-tab="action">Action</button>
+        </div>
+
+        <div id="tab-zone" class="tab-panel active">
+          <div class="panel-header panel-header-compact">
+            <h2 id="zone-title">Zone Inspector</h2>
+            <span id="zone-status" class="badge badge-neutral">Select a zone</span>
+          </div>
+          <div id="zone-details" class="zone-details">
+            <p class="placeholder-text">Click a marker or an incident. The map pans to your selection.</p>
+          </div>
+          <div id="why-flagged" class="why-flagged hidden"></div>
+          <canvas id="zone-chart" aria-label="Zone flow and pressure chart"></canvas>
+        </div>
+
+        <div id="tab-context" class="tab-panel">
+          <div id="zone-context" class="zone-context">
+            <p class="placeholder-text">Operational context appears when a zone is selected.</p>
+          </div>
+        </div>
+
+        <div id="tab-action" class="tab-panel">
+          <section id="workflow-section" class="workflow-section hidden">
+            <div id="workflow-panel" class="workflow-panel"></div>
+          </section>
+          <p id="action-placeholder" class="placeholder-text">Workflow steps appear when a zone needs operator action.</p>
+        </div>
+      </aside>
+
+      <section class="panel alerts-panel">
+        <div class="panel-header">
+          <h2>Incidents</h2>
+          <button id="btn-clear-alerts" class="btn btn-ghost" type="button" title="Remove closed incidents from lists">Clear closed</button>
+        </div>
+
+        <h3 class="incident-subheading">Active on map</h3>
+        <p class="panel-hint">Open incidents where the zone is still flagged (matches map colors).</p>
+        <ul id="alert-list-active" class="alert-list"></ul>
+
+        <h3 class="incident-subheading">Awaiting operator close-out</h3>
+        <p class="panel-hint">Readings returned to normal — finish or dismiss the case.</p>
+        <ul id="alert-list-closeout" class="alert-list alert-list-closeout"></ul>
+
+        <details class="activity-log-details">
+          <summary>System activity log</summary>
+          <ul id="activity-log" class="activity-log"></ul>
+        </details>
+      </section>
+
+      <section class="panel maintenance-panel">
+        <div class="panel-header">
+          <h2>Scheduled Maintenance</h2>
+        </div>
+        <ul id="maintenance-list" class="maintenance-list">
+          <li class="context-empty">Generate data to load schedule.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="help-modal" class="help-modal">
+    <form method="dialog">
+      <h2>How this dashboard works</h2>
+      <ol>
+        <li><strong>Start guide</strong> — interactive walkthrough at the top of the page (recommended for first-time users).</li>
+        <li><strong>Generate Data</strong> — loads 14 days of synthetic SCADA for 8 DC pressure zones.</li>
+        <li><strong>Train Model</strong> — trains a leak classifier in your browser, or use <em>Rules only</em> to compare.</li>
+        <li><strong>Live Simulation</strong> — new readings every few seconds; map and incidents stay in sync.</li>
+        <li>Click a flagged zone → review context → follow workflow steps (Acknowledge → Ticket → Dispatch → Close).</li>
+      </ol>
+      <p><strong>Zones at Risk</strong> counts map colors. <strong>Pending Review</strong> counts open incidents. They can differ when readings return to normal before an operator closes the case.</p>
+      <button class="btn btn-primary" value="default">Got it</button>
+    </form>
+  </dialog>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
