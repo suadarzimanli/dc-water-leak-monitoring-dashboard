@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "DC Water Leak Monitoring Dashboard"
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Arzimanli
+    given-names: Suad
+version: 1.0.0
+date-released: 2026-05-24
+license: CC-BY-4.0
+repository-code: "https://github.com/suadarzimanli/dc-water-leak-monitoring-dashboard"
+url: "https://suadarzimanli.github.io/dc-water-leak-monitoring-dashboard/"
+keywords:
+  - water distribution
+  - leak detection
+  - SCADA
+  - machine learning
+  - operator workflow
+  - synthetic data
+abstract: >-
+  Interactive web dashboard demonstrating synthetic SCADA-based leak monitoring
+  with in-browser logistic regression, rule-based detection, geospatial
+  visualization, and operator incident workflow. Educational use only; not
+  affiliated with DC Water.
