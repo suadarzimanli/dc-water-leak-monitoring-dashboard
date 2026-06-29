@@ -119,7 +119,7 @@ export function buildUserGuide(deps) {
         title: "2. Load synthetic SCADA data",
         duration: "About 1 min",
         learn:
-          "The app generates 14 days of hourly flow and pressure readings for 8 DC pressure zones. All values are synthetic — not real utility data.",
+          "The app generates 14 days of hourly flow and pressure readings for 8 fictional pressure zones. All values are synthetic — not real utility data.",
         youWillSee:
           "Map markers (usually green), a maintenance schedule, and zone details in the right panel.",
         check: (ctx) => ctx.hasData,

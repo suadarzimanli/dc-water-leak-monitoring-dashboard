@@ -1,26 +1,24 @@
-# DC Water Leak Monitoring Dashboard
+# Urban Leak Monitoring Dashboard
 
-This project is an interactive **web-based demonstration** of distribution network monitoring for the Washington, DC area. It uses **synthetic SCADA data** (flow and pressure), **in-browser machine learning** (logistic regression), **rule-based detection**, operational context, and a step-by-step **operator workflow**.
+Interactive **web-based demonstration** of distribution network monitoring for a **fictional North American city**. It uses **synthetic SCADA data** (flow and pressure), **in-browser machine learning** (logistic regression), **rule-based detection**, operational context, and a step-by-step **operator workflow**.
 
 The application supports learning and exploration of how utilities detect possible leaks, review context, and manage incidents on a map.
 
-**Unofficial educational project** — not affiliated with, endorsed by, or connected to DC Water or any operational utility. All sensor values are simulated.
+**Unofficial educational project** — not affiliated with, endorsed by, or connected to any real water utility. All sensor values are simulated. Map coordinates are used for geographic context only; zone names and readings are fictional.
 
 ---
 
 ## Live application
 
-**https://suadarzimanli.github.io/dc-water-leak-monitoring-dashboard/**
-
-(Enable GitHub Pages once after the first push — steps below.)
+**https://suadarzimanli.github.io/water-leak-monitoring-dashboard/**
 
 ---
 
 ## Run locally
 
 ```bash
-git clone https://github.com/suadarzimanli/dc-water-leak-monitoring-dashboard.git
-cd dc-water-leak-monitoring-dashboard
+git clone https://github.com/suadarzimanli/water-leak-monitoring-dashboard.git
+cd water-leak-monitoring-dashboard
 python -m http.server 8080
 ```
 
@@ -34,7 +32,7 @@ On Windows you can double-click `start-server.bat` instead.
 
 ## Data and methods (summary)
 
-- **8 pressure zones** with public map coordinates (Leaflet + OpenStreetMap)
+- **8 pressure zones** with map coordinates (Leaflet + OpenStreetMap)
 - **14 days** of synthetic hourly readings per zone (seeded generator)
 - **Training labels** from simulator scenarios (`leak` vs normal / hydrant test / valve work, etc.)
 - **Features:** normalized flow and pressure deltas, interaction term, hour-of-day

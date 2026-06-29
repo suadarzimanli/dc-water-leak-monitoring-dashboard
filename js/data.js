@@ -1,4 +1,4 @@
-import { DC_ZONES } from "./zones.js";
+import { PRESSURE_ZONES } from "./zones.js";
 import {
   applyScenarioToReading,
   pickLiveScenario,
@@ -30,7 +30,7 @@ export function generateScadaDataset({ days = 14, leakRate = 0.04, seed = 42 } =
   const hours = days * 24;
   const start = new Date("2026-01-01T00:00:00");
 
-  for (const zone of DC_ZONES) {
+  for (const zone of PRESSURE_ZONES) {
     for (let i = 0; i < hours; i += 1) {
       const timestamp = new Date(start.getTime() + i * 60 * 60 * 1000);
       const hour = timestamp.getHours();

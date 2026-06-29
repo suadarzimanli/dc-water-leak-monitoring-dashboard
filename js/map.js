@@ -1,10 +1,10 @@
-import { DC_ZONES } from "./zones.js";
+import { PRESSURE_ZONES } from "./zones.js";
 
 function priorityClass(priority) {
   return priority === "high" ? "priority-high" : "priority-standard";
 }
 
-export function createDcMap(containerId, onZoneSelect) {
+export function createZoneMap(containerId, onZoneSelect) {
   const map = L.map(containerId, {
     zoomControl: true,
     scrollWheelZoom: true,
@@ -19,7 +19,7 @@ export function createDcMap(containerId, onZoneSelect) {
   const markers = new Map();
   let selectedZoneId = null;
 
-  for (const zone of DC_ZONES) {
+  for (const zone of PRESSURE_ZONES) {
     const icon = L.divIcon({
       className: "",
       html: `<div class="zone-marker normal ${priorityClass(zone.priority)}" data-zone="${zone.id}">
@@ -69,7 +69,7 @@ export function createDcMap(containerId, onZoneSelect) {
       }
     },
     focusZone(zoneId) {
-      const zone = DC_ZONES.find((z) => z.id === zoneId);
+      const zone = PRESSURE_ZONES.find((z) => z.id === zoneId);
       const marker = markers.get(zoneId);
       if (!zone || !marker) return;
       map.setView([zone.lat, zone.lng], 14, { animate: true });

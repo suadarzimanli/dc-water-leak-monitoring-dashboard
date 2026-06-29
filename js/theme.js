@@ -1,13 +1,18 @@
-const STORAGE_KEY = "dcwater-theme";
+const STORAGE_KEY = "leakdash-theme";
+const LEGACY_STORAGE_KEY = "dcwater-theme";
 
 export const THEMES = {
   DARK: "dark",
   LIGHT: "light",
 };
 
-export function getStoredTheme() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+function readStoredTheme() {
+  const saved = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
   return saved === THEMES.LIGHT ? THEMES.LIGHT : THEMES.DARK;
+}
+
+export function getStoredTheme() {
+  return readStoredTheme();
 }
 
 export function applyTheme(theme) {
@@ -18,7 +23,7 @@ export function applyTheme(theme) {
 }
 
 export function initTheme() {
-  return applyTheme(getStoredTheme());
+  return applyTheme(readStoredTheme());
 }
 
 export function toggleTheme(currentTheme) {

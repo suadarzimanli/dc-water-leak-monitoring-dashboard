@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DC Water Leak Monitoring Dashboard</title>
+  <title>Urban Leak Monitoring Dashboard</title>
   <script>
     (function () {
-      var t = localStorage.getItem("dcwater-theme");
+      var t = localStorage.getItem("leakdash-theme") || localStorage.getItem("dcwater-theme");
       document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
     })();
   </script>
@@ -24,7 +24,7 @@
       <div class="brand">
         <span class="brand-icon" aria-hidden="true">💧</span>
         <div>
-          <h1>DC Water Leak Monitoring</h1>
+          <h1>Urban Leak Monitoring</h1>
           <p>Learn leak monitoring with synthetic SCADA, ML detection, and operator workflow</p>
         </div>
       </div>
@@ -129,8 +129,8 @@
           <h2>Distribution Network Map</h2>
           <span id="map-status" class="badge badge-neutral">Ready</span>
         </div>
-        <p id="map-summary" class="panel-hint">Click <strong>Generate Data</strong> to load 14 days of synthetic SCADA for 8 DC zones.</p>
-        <div id="map" class="map-container" aria-label="DC water zone map"></div>
+        <p id="map-summary" class="panel-hint">Click <strong>Generate Data</strong> to load 14 days of synthetic SCADA for 8 pressure zones.</p>
+        <div id="map" class="map-container" aria-label="Distribution zone map"></div>
         <div class="map-legend">
           <span><i class="dot dot-normal"></i> Normal</span>
           <span><i class="dot dot-warning"></i> Warning</span>
@@ -209,7 +209,7 @@
       <h2>How this dashboard works</h2>
       <ol>
         <li><strong>Start guide</strong> — interactive walkthrough at the top of the page (recommended for first-time users).</li>
-        <li><strong>Generate Data</strong> — loads 14 days of synthetic SCADA for 8 DC pressure zones.</li>
+        <li><strong>Generate Data</strong> — loads 14 days of synthetic SCADA for 8 pressure zones.</li>
         <li><strong>Train Model</strong> — trains a leak classifier in your browser, or use <em>Rules only</em> to compare.</li>
         <li><strong>Live Simulation</strong> — new readings every few seconds; map and incidents stay in sync.</li>
         <li>Click a flagged zone → review context → follow workflow steps (Acknowledge → Ticket → Dispatch → Close).</li>

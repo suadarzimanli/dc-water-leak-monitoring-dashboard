@@ -1,4 +1,4 @@
-import { DC_ZONES } from "./zones.js";
+import { PRESSURE_ZONES } from "./zones.js";
 import { getChartTheme, getThemeLabel, initTheme, THEMES, toggleTheme } from "./theme.js";
 import { buildUserGuide } from "./user-guide.js";
 import { APP_PHASE, DETECTION_MODE, SIMULATION_MS } from "./config.js";
@@ -24,7 +24,7 @@ import {
   computeZoneStats,
   evaluateReading,
 } from "./ml.js";
-import { createDcMap } from "./map.js";
+import { createZoneMap } from "./map.js";
 import { renderZoneChart } from "./charts.js";
 import {
   acknowledgeAlert,
@@ -108,7 +108,7 @@ const ui = {
   zoneChart: document.getElementById("zone-chart"),
 };
 
-const mapApi = createDcMap("map", (zoneId) => {
+const mapApi = createZoneMap("map", (zoneId) => {
   selectZone(zoneId);
 });
 
@@ -159,7 +159,7 @@ function classifyOpenIncidents() {
 }
 
 function countZonesAtRisk() {
-  return DC_ZONES.filter((zone) => getZoneEvaluation(zone.id).risk !== "normal").length;
+  return PRESSURE_ZONES.filter((zone) => getZoneEvaluation(zone.id).risk !== "normal").length;
 }
 
 function getActivityLogs() {
@@ -232,7 +232,7 @@ function updateMetrics() {
   const atRisk = countZonesAtRisk();
   const { open, awaitingCloseout } = classifyOpenIncidents();
 
-  ui.metricZones.textContent = String(DC_ZONES.length);
+  ui.metricZones.textContent = String(PRESSURE_ZONES.length);
   ui.metricAtRisk.textContent = String(atRisk);
   ui.metricPending.textContent = String(open.length);
   ui.metricCloseout.textContent = String(awaitingCloseout.length);
@@ -249,7 +249,7 @@ function updateMetrics() {
   if (ui.mapSummary) {
     if (!state.readings.length) {
       ui.mapSummary.textContent =
-        "Click Generate Data to load 14 days of synthetic SCADA for 8 DC zones.";
+        "Click Generate Data to load 14 days of synthetic SCADA for 8 pressure zones.";
     } else if (atRisk === 0) {
       ui.mapSummary.textContent = "All zones normal on latest readings.";
     } else {
@@ -286,7 +286,7 @@ function reconcileIncidents() {
     incident.risk = evaluation.risk;
 
     const latest = state.latestByZone.get(incident.zoneId);
-    const zone = DC_ZONES.find((z) => z.id === incident.zoneId);
+    const zone = PRESSURE_ZONES.find((z) => z.id === incident.zoneId);
     if (!latest || !zone) continue;
 
     const context = buildContextSummary(zone, latest);
@@ -594,7 +594,7 @@ function renderSelectedZone() {
     return;
   }
 
-  const zone = DC_ZONES.find((z) => z.id === zoneId);
+  const zone = PRESSURE_ZONES.find((z) => z.id === zoneId);
   const latest = state.latestByZone.get(zoneId);
   if (!zone || !latest) return;
 
@@ -629,7 +629,7 @@ function renderSelectedZone() {
 }
 
 function refreshMapAndIncidents() {
-  for (const zone of DC_ZONES) {
+  for (const zone of PRESSURE_ZONES) {
     const latest = state.latestByZone.get(zone.id);
     if (!latest) {
       mapApi.setMarkerRisk(zone.id, "normal");
@@ -697,11 +697,11 @@ function getScriptContext() {
 }
 
 function selectFirstZone() {
-  if (DC_ZONES.length) selectZone(DC_ZONES[0].id);
+  if (PRESSURE_ZONES.length) selectZone(PRESSURE_ZONES[0].id);
 }
 
 function selectFirstRiskyZone() {
-  const risky = DC_ZONES.find((z) => getZoneEvaluation(z.id).risk !== "normal");
+  const risky = PRESSURE_ZONES.find((z) => getZoneEvaluation(z.id).risk !== "normal");
   if (!risky) return false;
   const open = getOpenIncidents(state.alerts).find((a) => a.zoneId === risky.id);
   if (open) {
@@ -713,7 +713,7 @@ function selectFirstRiskyZone() {
 }
 
 function hasRiskyZone() {
-  return DC_ZONES.some((z) => getZoneEvaluation(z.id).risk !== "normal");
+  return PRESSURE_ZONES.some((z) => getZoneEvaluation(z.id).risk !== "normal");
 }
 
 function getSelectedIncident() {
@@ -904,7 +904,7 @@ function onGenerateData() {
 
   refreshMapAndIncidents();
   renderMaintenanceList();
-  selectZone(DC_ZONES[0].id);
+  selectZone(PRESSURE_ZONES[0].id);
   setAppPhase(APP_PHASE.DATA_READY);
   pushSystemLog("Synthetic dataset loaded (14 days, 8 zones).");
 }
@@ -939,7 +939,7 @@ function stopSimulation() {
 function startSimulation() {
   const intervalMs = SIMULATION_MS[state.simulationSpeed] ?? SIMULATION_MS.normal;
   state.simulationTimer = setInterval(() => {
-    const zone = DC_ZONES[Math.floor(Math.random() * DC_ZONES.length)];
+    const zone = PRESSURE_ZONES[Math.floor(Math.random() * PRESSURE_ZONES.length)];
     const previous = state.latestByZone.get(zone.id);
     const row = simulateLiveTick(zone, previous, state.maintenanceEvents, state.weather);
     ingestReading(row);
@@ -983,7 +983,7 @@ function resetDemo(options = {}) {
   state.guideResetDone = false;
   ui.detectionMode.value = DETECTION_MODE.ML;
 
-  for (const zone of DC_ZONES) {
+  for (const zone of PRESSURE_ZONES) {
     mapApi.setMarkerRisk(zone.id, "normal");
     mapApi.setMaintenanceBadge(zone.id, false);
     mapApi.setSelected(null);
@@ -1012,7 +1012,7 @@ function injectScenario(scenarioKey) {
   }
 
   const scenarioType = SCENARIO_TYPES[scenarioKey.toUpperCase()] ?? scenarioKey;
-  const zone = DC_ZONES[Math.floor(Math.random() * DC_ZONES.length)];
+  const zone = PRESSURE_ZONES[Math.floor(Math.random() * PRESSURE_ZONES.length)];
   const row = createScriptedReading(zone, scenarioType, state.weather);
   ingestReading(row);
   selectZone(zone.id);
@@ -1034,7 +1034,7 @@ async function runGuidedDemo() {
   startSimulation();
   pushSystemLog("Quick tour: simulation running — watch for orange or red markers.", "warning");
   await sleep(12000);
-  const risky = DC_ZONES.find((z) => getZoneEvaluation(z.id).risk !== "normal");
+  const risky = PRESSURE_ZONES.find((z) => getZoneEvaluation(z.id).risk !== "normal");
   if (risky) {
     selectZone(risky.id);
     setActiveSideTab("action");
